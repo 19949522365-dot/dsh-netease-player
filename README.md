@@ -148,15 +148,29 @@ Cookie 只存在本机 `<DSH_HOME>/netease-player.json`，接口不回显明文�
 
 仓库：<https://github.com/19949522365-dot/dsh-netease-player>
 
-1. 下载仓库（Code → Download ZIP）或 `git clone` 到本地。
-2. 在 DSH 的 **Plugins → Add plugin** 里选这个目录（绝对路径）；
-   或者用命令行把它 link 进 profile：
-   ```
-   npx @deepseek-ai/dsh plugin --profile web add link:<解压目录的绝对路径>
-   ```
-3. 重启 DSH。
+**一条命令（本机有 git 时）：**
 
-> 暂时没有发 npm；之后发 npm 或上架 DSH Market 时会补一句直接安装的命令。
+```bash
+npx @deepseek-ai/dsh plugin --profile web add github:19949522365-dot/dsh-netease-player
+```
+
+桌面端把 `web` 换成 `desktop`：
+
+```bash
+npx @deepseek-ai/dsh plugin --profile desktop add github:19949522365-dot/dsh-netease-player
+```
+
+**没有 git** 就用 GitHub 打的 tarball（实测 pnpm 能装）：
+
+```bash
+npx @deepseek-ai/dsh plugin --profile web add https://github.com/19949522365-dot/dsh-netease-player/archive/refs/heads/main.tar.gz
+```
+
+也可以下载 ZIP，在 DSH 的 **Plugins → Add plugin** 里选目录，或用 `link:<绝对路径>` 安装。
+
+装完**重启 DSH**。要求 Node.js >= 22.12；DSH 版本太老（没有 `dsh.bundle` / `dsh.client` 支持）会装不上。
+
+> 暂时没有发 npm；之后发 npm 或上架 DSH Market 时会补一句更短的安装命令。
 
 要求 Node.js >= 22.12；DSH 版本太老（没有 `dsh.bundle` / `dsh.client` 支持）会装不上。
 
