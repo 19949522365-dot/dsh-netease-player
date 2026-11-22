@@ -35,6 +35,7 @@ DSH 窗口底部常驻一条网易云播放条：搜歌、歌单、播放、歌�
 - **登录后**：音源优先走本地服务的 `/song/url/v1`，会员曲目也能放；
 - **本地服务没起来**：宿主还会直连 `music.163.com` 的公开 `player/url` 接口兜底（有 Cookie 才拿得到地址），
   所以服务冷启动那十几秒里点歌也不会哑火；
+- **0.6.0 的扫码登录拿到的 Cookie 就能走上面这条路**，所以别人不装本地服务也能点歌；
 - 两种情况下，音频都是**宿主解析出真实地址再流式转发**（带 Referer、保留 Range），
   所以能拖进度条，也不会因为 CDN 的时效 token 过期而忽然播不动；
 - `/play` 会逐个试候选音源，**回来的不是音频就直接扔掉换下一个**，不会再把 404 网页当 mp3 塞给 `<audio>`。
@@ -115,30 +116,31 @@ DSH 窗口底部常驻一条网易云播放条：搜歌、歌单、播放、歌�
 > **控制已隐藏装饰的死开关**删掉了 —— 连同它们的 base64 素材和 WebAudio 频谱代码一起，
 > 客户端小了约 70KB。系统开了「减少动态效果」时仍会自动收敛。
 
-## 登录（可选）
+## 登录（0.6.0 起不用装任何东西）
 
-登录要一个本地 NeteaseCloudMusicApi 服务（默认 `http://127.0.0.1:3020`）。
-插件会自动认这两个位置：
+账号页签 →「扫码登录」→ 网易云 App 扫一下就行。二维码是插件自己在本地算出来的
+（weapi 签名 + 自带 QR 编码器，见 `lib/weapi.js` / `lib/qr.js`），
+不依赖 NeteaseCloudMusicApi，也不用先装任何服务。
+
+登录之后这些都不需要本地服务：
+
+- 账号信息、自己的歌单、歌单里的曲目 —— 走 `music.163.com` 的公开接口；
+- 普通曲目播放 —— 用 Cookie 直接问公开的 `player/url` 拿真实地址，宿主转发并保留 Range。
+
+本地 [NeteaseCloudMusicApi](https://github.com/Binaryify/NeteaseCloudMusicApi)（默认 3020）
+现在只影响一件事：**会员曲目 / 更高音质**（`/song/url/v1` + `realIP` 绕风控）。
+想用就把服务放在下面任一位置，然后在「账号」页签点「启动服务」（冷启动约 10 秒）：
 
 1. `<DSH_HOME>/netease-service/server.js`
 2. 当前工作目录下的 `netease-service/server.js`
 
-找到之后，在「账号」页签点 **启动服务** 就行（冷启动大约 10 秒）。
-没有这个服务时，扫码登录是不可用的，只能听普通音源。
+服务在线时 `/proxy` 优先透传给它是老路径；离线时扫码、账号、歌单由插件自己实现。
+登录过（`netease-player.json` 里有 Cookie）之后，DSH 启动时会顺手在后台拉一次本地服务，
+不阻塞启动；没登录则不会拉。
 
-登录过（`netease-player.json` 里有 Cookie）之后，**DSH 启动时会自动拉起一次**本地服务：
-只要服务不在线就在后台拉，不阻塞启动，也不会重复拉；没登录则不会自动拉，省点内存。
-自动拉起失败不影响手动点「启动服务」。
-
-服务是冷启动，起来要十几秒。这段时间页面里 `serviceOnline` 还是 `false`，
-所以歌单页开头会先显示「本地 API 服务还没起来」——属正常现象，**十几秒内会自动恢复**，
-不需要刷页面；「重新检测」可以立刻重抓一次状态。
-
-登录方式两种：
-
-- **扫码**：账号页签 →「扫码登录」→ 网易云 App 扫一下；
-- **Cookie**：浏览器打开 music.163.com 登录 → F12 → Network 随便点一个请求 →
-  复制 Request Headers 里的整段 Cookie → 粘进输入框 →「保存 Cookie」。
+另一种登录方式仍然是粘 Cookie：浏览器打开 music.163.com 登录 → F12 → Network 随便点一个请求 →
+复制 Request Headers 里的整段 Cookie → 粘进输入框 →「保存 Cookie」。
+Cookie 校验也走公开账号接口，不要求本地服务在线。
 
 Cookie 只存在本机 `<DSH_HOME>/netease-player.json`，接口不回显明文。
 
@@ -174,8 +176,8 @@ npx @deepseek-ai/dsh plugin --profile web add https://github.com/19949522365-dot
 
 要求 Node.js >= 22.12；DSH 版本太老（没有 `dsh.bundle` / `dsh.client` 支持）会装不上。
 
-**本地 API 服务是可选的**：不装也能搜歌、放普通音源、看歌词（走 `music.163.com` 公开接口）；
-要扫码登录、读自己的歌单、放会员曲目，才需要自己跑一个
+**什么都不用装**：装好插件、重启 DSH、扫码，就能听普通曲目、看自己的歌单、看歌词。
+只有会员曲目 / 更高音质才建议自己跑一个
 [NeteaseCloudMusicApi](https://github.com/Binaryify/NeteaseCloudMusicApi)（默认 `http://127.0.0.1:3020`），
 然后在「账号」页签里配置/启动，或用 `POST /api/netease-player/config` 传 `apiBase` / `serviceDir`。
 
@@ -210,10 +212,10 @@ npx @deepseek-ai/dsh plugin --profile web add https://github.com/19949522365-dot
 | GET | `/api/netease-player/search?keywords=&limit=` | 搜索（服务优先，公开接口兜底） |
 | GET | `/api/netease-player/play?id=` | 音频流（支持 Range） |
 | GET | `/api/netease-player/lyric?id=` | 逐行歌词 + 翻译 |
-| POST | `/api/netease-player/cookie` | 保存 / 清空 Cookie（保存前先用 `/user/account` 校验） |
+| POST | `/api/netease-player/cookie` | 保存 / 清空 Cookie（用公开账号接口校验，不需要本地服务） |
 | POST | `/api/netease-player/config` | 改 `apiBase` / `serviceDir` / 音质 `level` / 风控用的 `realIP` |
 | POST | `/api/netease-player/service/start` | 拉起本地 NeteaseCloudMusicApi |
-| GET | `/api/netease-player/proxy?path=/xxx` | 通用透传（二维码登录、歌单走这里） |
+| GET | `/api/netease-player/proxy?path=/xxx` | 通用透传；本地服务离线时扫码登录 / 账号 / 歌单由插件自己实现 |
 
 歌单没加新路由，全部走 `/proxy` 透传：
 
@@ -246,6 +248,9 @@ $p = "<DSH_HOME>\plugins\dsh-netease-player"
 
 # 6) 桌面端自定义协议：音源必须换成宿主的 http 地址，否则进度条拖不动
 & $node "$p\tests\media-origin.mjs" "$p\lib\client.js"
+
+# 7) 0.6.0 的离线链路：假装本地 NeteaseCloudMusicApi 不可用，扫码 / 账号 / 歌单 / 曲目 / 音源
+& $node "$p\tests\offline-native.mjs" "$p\lib\index.js"
 ```
 
 `self-test` 会把 `apply()` 挂到假 ctx 上起临时 HTTP server，真的打网络，逐项打印 ok / FAIL。
@@ -257,6 +262,28 @@ $p = "<DSH_HOME>\plugins\dsh-netease-player"
 切音源、拖音量、删队列里的歌、看默认页签，34 条断言。
 `seek-fix` 专门盯进度条：拖动预览、松手只 seek 一次、指针捕获被抢、click 兜底、不可 seek 时的提示；
 `media-origin` 盯桌面端音源地址（`dsh-app://` 下必须换成宿主 http 地址，普通浏览器保持相对路径）。
+`offline-native` 把 `apiBase` 指到死端口，专门验证「没有本地服务」时的扫码、账号、歌单、曲目和音源；
+没有 Cookie 时它会跳过账号/歌单那几条，只验二维码和状态码。
+
+## 0.6.0 改了什么（下载就能扫码登录）
+
+以前扫码登录是把 `/login/qr/*` 整条链路代理给本地 NeteaseCloudMusicApi ——
+别人下载插件、机器上没有那个服务，二维码就永远是「本地 API 服务没起来」。这一版把这段自己做完了：
+
+- `lib/weapi.js`：自己算网易云的 weapi 签名（纯 `node:crypto`，无依赖），
+  要二维码 unikey、轮询扫码状态、从 `Set-Cookie` 里收 `MUSIC_U`；
+- `lib/qr.js`：自带 QR 编码器（byte 模式 / EC M / 版本 1–40 / 8 种掩码按惩罚分择优），
+  按 `https://music.163.com/login?codekey=…` 生成内联 SVG 给前端画 ——
+  不引 npm 包、不发 `data:` URL（不受页面 CSP 的 img-src 影响）；
+- 本地服务离线时，`/proxy` 里的 `/login/qr/*`、`/user/account`、`/user/playlist`、
+  `/playlist/detail`、`/playlist/track/all` 由插件自己直连 `music.163.com` 完成；
+  服务在线时依旧优先透传给本地服务（会员曲 / 更高音质那条老路不受影响）；
+- `POST /cookie` 改用公开账号接口校验，不要求本地服务在线；
+- 歌单页不再因为「本地服务离线」而整个空掉；账号页签切过去会重新拉一次 `/state`；
+- 账号页会显示当前版本号，排查「装的是哪一版」用。
+
+QR 编码器逐位比对过 `qrcode@1.5` 的 byte 模式输出（版本 1–40、8 种掩码全部一致），
+并且用 jsQR 把生成的图真扫了一遍；离线（本地服务不可用）整条链路有单独的自检脚本。
 
 ## 0.5.0 改了什么（首个公开发布版）
 
