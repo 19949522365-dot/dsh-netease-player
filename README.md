@@ -144,17 +144,21 @@ Cookie 只存在本机 `<DSH_HOME>/netease-player.json`，接口不回显明文�
 
 ## 安装
 
-### 从 npm 安装（公开版）
+### 从 GitHub 安装
 
-```bash
-# Web profile
-npx @deepseek-ai/dsh plugin --profile web add dsh-netease-player
+仓库：<https://github.com/19949522365-dot/dsh-netease-player>
 
-# Desktop profile
-npx @deepseek-ai/dsh plugin --profile desktop add dsh-netease-player
-```
+1. 下载仓库（Code → Download ZIP）或 `git clone` 到本地。
+2. 在 DSH 的 **Plugins → Add plugin** 里选这个目录（绝对路径）；
+   或者用命令行把它 link 进 profile：
+   ```
+   npx @deepseek-ai/dsh plugin --profile web add link:<解压目录的绝对路径>
+   ```
+3. 重启 DSH。
 
-装完重启 DSH。要求 Node.js >= 22.12；DSH 版本太老（没有 `dsh.bundle` / `dsh.client` 支持）会装不上。
+> 暂时没有发 npm；之后发 npm 或上架 DSH Market 时会补一句直接安装的命令。
+
+要求 Node.js >= 22.12；DSH 版本太老（没有 `dsh.bundle` / `dsh.client` 支持）会装不上。
 
 **本地 API 服务是可选的**：不装也能搜歌、放普通音源、看歌词（走 `music.163.com` 公开接口）；
 要扫码登录、读自己的歌单、放会员曲目，才需要自己跑一个
@@ -242,7 +246,7 @@ $p = "<DSH_HOME>\plugins\dsh-netease-player"
 
 ## 0.5.0 改了什么（首个公开发布版）
 
-- 去掉 `private`，补 MIT `LICENSE`、`engines.node` 和 npm 安装说明；包名 `dsh-netease-player`。
+- 去掉 `private`，补 MIT `LICENSE`、`engines.node` 和 GitHub 安装说明；包名 `dsh-netease-player`。
 - **去掉内置 realIP**：公开包不再带任何出口 IP；需要时由 `POST /config` 的 `realIP` 或
   环境变量 `DSH_NETEASE_REAL_IP` 提供。
 - 本地 API 服务写成明确的**可选依赖**：不装也能搜歌 / 播放 / 看歌词，登录、歌单、会员曲目才需要它。
