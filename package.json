@@ -17,6 +17,14 @@
   "engines": {
     "node": ">=22.12.0"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/19949522365-dot/dsh-netease-player.git"
+  },
+  "homepage": "https://github.com/19949522365-dot/dsh-netease-player#readme",
+  "bugs": {
+    "url": "https://github.com/19949522365-dot/dsh-netease-player/issues"
+  },
   "exports": {
     ".": "./lib/index.js",
     "./client": "./lib/client.js",
