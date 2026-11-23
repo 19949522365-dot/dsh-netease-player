@@ -1,8 +1,8 @@
 {
   "name": "dsh-netease-player",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "type": "module",
-  "description": "网易云音乐播放器 + B 站音源：DSH 窗口底部常驻播放条，搜索、播放、歌词都在页面里；0.6.0 起扫码登录不需要本地服务。",
+  "description": "网易云音乐播放器 + B 站音源：DSH 窗口底部常驻播放条，搜索、播放、歌词都在页面里；扫码登录不需要本地服务。",
   "keywords": [
     "dsh",
     "dsh-plugin",

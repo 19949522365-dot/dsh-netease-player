@@ -99,6 +99,15 @@ try {
 
   const poll = await getJson(`${q('/login/qr/check')}&key=${encodeURIComponent(unikey || '')}`)
   check('轮询回 801（等待扫码）', poll.json?.code === 801, JSON.stringify(poll.json))
+  check('轮询带上了 HTTP 码', typeof poll.json?.status === 'number' && poll.json.status > 0, JSON.stringify(poll.json))
+  check('轮询报告有没有带 cookie', typeof poll.json?.hasJar === 'boolean', JSON.stringify(poll.json))
+  check('/state 带回扫码脚印', Array.isArray(state.json?.qrTrace), JSON.stringify(state.json?.qrTrace))
+
+  console.log('--- set-cookie 兼容（老 Node 没有 getSetCookie）')
+  const w = await import(pathToFileURL(path.join(path.dirname(path.resolve(entry)), 'weapi.js')).href)
+  const merged = w.splitSetCookie('NMTID=abc; Path=/, MUSIC_U=xyz; Expires=Wed, 21 Oct 2026 07:28:00 GMT; Path=/')
+  check('合并的 set-cookie 能拆成两条', merged.length === 2, JSON.stringify(merged))
+  check('Expires 里的逗号没被拆开', merged[1] === 'MUSIC_U=xyz; Expires=Wed, 21 Oct 2026 07:28:00 GMT; Path=/', merged[1])
 
   console.log('--- 未登录时的账号接口')
   if (!seed.cookie) {

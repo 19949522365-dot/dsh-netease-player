@@ -568,4 +568,22 @@ click(byText(tree, 'np-tab', '歌词'))
 tree = await renderAll()
 check('歌词页签是单栏铺满', !!findByClass(tree, 'np-panel--lyric'))
 
+// 18. 在别的页签用底部搜索框搜 → 自动翻到搜歌页（0.6.1）
+check('此刻停在歌词页', !!findByClass(tree, 'np-panel--lyric'))
+const searchInput = findByClass(tree, 'np-search-input')
+check('底部有搜索框', !!searchInput)
+if (searchInput) {
+  searchInput.props.onChange({ target: { value: '晴天' } })
+  tree = await renderAll()
+  const footForm = findByClass(tree, 'np-nat-foot')
+  check('搜索框在表单里', !!footForm && typeof footForm.props.onSubmit === 'function')
+  if (footForm) {
+    footForm.props.onSubmit({ preventDefault() {} })
+    tree = await renderAll()
+    const p2 = findByClass(tree, 'np-panel')
+    check('搜完自动切到搜歌页', !!p2 && textOf(p2).indexOf('搜索结果') >= 0, p2 ? textOf(p2).slice(0, 40) : '')
+    check('不再是歌词铺满', !findByClass(tree, 'np-panel--lyric'))
+  }
+}
+
 process.exit(failed === 0 ? 0 : 1)

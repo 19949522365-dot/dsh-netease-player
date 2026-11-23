@@ -136,12 +136,19 @@ function renderTree(vnode) {
 
 // ---- 跑一个变体：改源码里的初始 state，模拟「面板打开 / 停在某个页签」------------
 
-function run({ tab, expanded, queue, name }) {
+function run({ tab, expanded, queue, login, qrLeft, name }) {
   const store = {}
   let patched = source
   if (tab) patched = patched.replace("useState('search')", `useState('${tab}')`)
   if (expanded) patched = patched.replace('var [expanded, setExpanded] = useState(false)', 'var [expanded, setExpanded] = useState(true)')
   if (queue) store['np.queue.v1'] = JSON.stringify(queue)
+  if (login) {
+    patched = patched.replace(
+      "useState({ step: 'idle', key: '', img: '', msg: '' })",
+      `useState(${JSON.stringify(login)})`,
+    )
+  }
+  if (qrLeft) patched = patched.replace('var [qrLeft, setQrLeft] = useState(0)', `var [qrLeft, setQrLeft] = useState(${qrLeft})`)
 
   const React = buildReact()
   let factory = null
@@ -299,5 +306,27 @@ const muteRun = (() => {
   return { text: renderTree(el), store }
 })()
 check('静音（volume=0）刷新后不会被弹回有声', muteRun.store['np.volume.v1'] === '0' || muteRun.store['np.volume.v1'] === undefined, 'volume=' + muteRun.store['np.volume.v1'])
+
+// 5) 账号页的扫码态：内联 SVG 二维码 + 剩余时间 + 提示
+const qrRun = run({
+  name: '账号页扫码态',
+  tab: 'account',
+  expanded: true,
+  login: { step: 'scan', key: 'k', img: '', qrpath: 'M0 0h10v10H0z', qrsize: 25, msg: '用网易云 App 扫码' },
+  qrLeft: 95,
+})
+check('扫码态渲染出二维码说明', qrRun.includes('用网易云 App 扫码'))
+check('扫码态显示剩余时间', qrRun.includes('二维码还剩 1:35'), qrRun.slice(0, 80).replace(/\n/g, ' | '))
+check('扫码态提示要在手机上确认', qrRun.includes('扫完请在手机上点「确认」'))
+check('扫码态有「换个二维码」按钮', qrRun.includes('换个二维码'))
+
+// 6) 扫码出错时把宿主的记录摆在页面上
+const qrErrRun = run({
+  name: '账号页扫码出错',
+  tab: 'account',
+  expanded: true,
+  login: { step: 'error', key: '', img: '', msg: '网易云回的扫码状态是 -460：网络环境存在风险' },
+})
+check('扫码出错显示原因', qrErrRun.includes('-460'))
 
 process.exit(failed === 0 ? 0 : 1)
